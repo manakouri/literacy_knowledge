@@ -1,3 +1,5 @@
+console.log("INDEX.JS IS LOADED");
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
 import { getFirestore, doc, setDoc, collection, getDocs, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
