@@ -17,8 +17,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 2. THE MASTER DATA VARIABLE
-const sessionsData = [
+// 2. THE MASTER DATA VARIABLE     Uncomment if reseeding
+// const sessionsData = [
   /* WEEK 1-2: THE OBSERVERS (Foundations) */
   { "id": "s1", "session_num": 1, "code_craft": { "focus": "Short /a/ & Clockface", "handwriting": "Model 'a', 'c', 'o' (2 o'clock start).", "targets": ["cat", "zap", "napkin"], "retrieval": ["map", "fan"], "dictation": "The cat had a napkin." }, "meaning_engine": { "word": "Notice", "family": "Observers", "boundary": "Seeing a tiny crack (This) vs staring at a wall (Not That).", "stems": ["because", "but", "so"] } },
   { "id": "s2", "session_num": 2, "code_craft": { "focus": "Short /i/ & Tall Letters", "handwriting": "Model 'l', 't', 'k' (Top-down).", "targets": ["pin", "sit", "mitten"], "retrieval": ["cat", "nap"], "dictation": "A rabbit had a pin." }, "meaning_engine": { "word": "Observe", "family": "Observers", "boundary": "Watching a snail move (This) vs glancing at a clock (Not That).", "stems": ["because", "but", "so"] } },
@@ -65,8 +65,8 @@ const sessionsData = [
   { "id": "s35", "session_num": 35, "code_craft": { "focus": "Term 1 Mastery", "handwriting": "Final LPM Check", "targets": ["Final List"], "retrieval": ["All Term 1"], "dictation": "Final Term 1 Mastery Assessment" }, "meaning_engine": { "word": "Present", "family": "Scholars", "boundary": "Showing work to the class (This) vs hiding it in a desk (Not That).", "stems": ["because", "but", "so"] } }
 ];
 
-// 3. SEEDING FUNCTION (Run this once, then comment out)
-async function seedDatabase() {
+// 3. SEEDING FUNCTION (Run this once, then comment out)   Uncomment if reseeding
+// async function seedDatabase() {
     console.log("Starting seed...");
     for (const s of sessionsData) {
         await setDoc(doc(db, "literacy_sessions", s.id), s);
@@ -80,8 +80,8 @@ async function seedDatabase() {
     alert("Database Seeded!");
 }
 
-// UNCOMMENT THE LINE BELOW TO SEED, THEN RE-COMMENT IT AFTER
-seedDatabase();
+// UNCOMMENT THE LINE BELOW TO SEED, THEN RE-COMMENT IT AFTER  only if needing to reseed the database
+// seedDatabase();
 
 function setupRealtimeSync(sessionId) {
     onSnapshot(doc(db, "user_progress", sessionId), (docSnap) => {
