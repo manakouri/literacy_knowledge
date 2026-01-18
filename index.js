@@ -138,6 +138,3 @@ window.toggleDrawer = (id) => {
 
 
 initDashboard();
-
-console.log("Attempting to run seed...");
-seedDatabase().then(() => console.log("Seed function finished!"));
