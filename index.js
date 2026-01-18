@@ -141,14 +141,21 @@ function renderMeaningContent(m) {
 
 // 5. EVENT HANDLERS & SYNC
 window.cycleStatus = async (event, sessionId, type) => {
-    event.stopPropagation();
+    event.stopPropagation(); // Prevents the drawer from opening/closing when you click the dot
+    
+    const docRef = doc(db, "user_progress", sessionId);
     const dot = document.getElementById(`dot-${type}-${sessionId}`);
-    const statusOrder = ['grey', 'green', 'yellow'];
-    let current = statusOrder.find(s => dot.classList.contains(s)) || 'grey';
-    let next = statusOrder[(statusOrder.indexOf(current) + 1) % 3];
+    
+    // Logic: Grey -> Green -> Yellow -> (back to Grey)
+    let nextStatus = 'grey';
+    if (dot.classList.contains('grey')) nextStatus = 'green';
+    else if (dot.classList.contains('green')) nextStatus = 'yellow';
+    else if (dot.classList.contains('yellow')) nextStatus = 'grey';
 
-    dot.className = `status-dot ${next}`;
-    await updateDoc(doc(db, "user_progress", sessionId), { [`${type}_status`]: next });
+    // Update Firebase immediately
+    await updateDoc(docRef, { [`${type}_status`]: nextStatus });
+    
+    // The setupRealtimeSync function will handle updating the UI color automatically!
 };
 
 window.updateNote = async (id, type, val) => {
