@@ -64,10 +64,36 @@ function renderCodeContent(c) {
 }
 
 function renderMeaningContent(m) {
+    // If 'boundary' exists and contains 'vs', we split it for the UI
+    let thisPart = m.boundary || m.boundary_eg || "No example provided.";
+    let notThatPart = m.boundary_non || "N/A";
+
+    if (m.boundary && m.boundary.includes("vs")) {
+        const parts = m.boundary.split("vs");
+        thisPart = parts[0].trim().replace("(This)", "");
+        notThatPart = parts[1].trim().replace("(Not That)", "");
+    }
+
     return `
-        <p><strong>Family:</strong> ${m.family}</p>
-        <p><strong>Example:</strong> ${m.boundary || m.boundary_eg}</p>
-        <div class="stems"><em>Stems: ...because / ...but / ...so</em></div>
+        <div class="meaning-display">
+            <p class="family-tag"><strong>Family:</strong> ${m.family}</p>
+            <div class="boundary-box">
+                <div class="boundary-item this">
+                    <span class="icon">✅</span>
+                    <div><strong>THIS:</strong> ${thisPart}</div>
+                </div>
+                <div class="boundary-item not-that">
+                    <span class="icon">❌</span>
+                    <div><strong>NOT THAT:</strong> ${notThatPart}</div>
+                </div>
+            </div>
+            <div class="stems-box">
+                <strong>Oral Language Drills:</strong>
+                <p class="stem-item">... because</p>
+                <p class="stem-item">... but</p>
+                <p class="stem-item">... so</p>
+            </div>
+        </div>
     `;
 }
 
