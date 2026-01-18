@@ -83,6 +83,19 @@ async function seedDatabase() {
 // UNCOMMENT THE LINE BELOW TO SEED, THEN RE-COMMENT IT AFTER
 seedDatabase();
 
+function setupRealtimeSync(sessionId) {
+    onSnapshot(doc(db, "user_progress", sessionId), (docSnap) => {
+        const data = docSnap.data();
+        if (!data) return;
+        ['code', 'meaning'].forEach(type => {
+            const dot = document.getElementById(`dot-${type}-${sessionId}`);
+            const note = document.getElementById(`notes-${type}-${sessionId}`);
+            if (dot) dot.className = `status-dot ${data[`${type}_status`]}`;
+            if (note && document.activeElement !== note) note.value = data[`${type}_notes`];
+        });
+    });
+}
+
 // 4. DASHBOARD LOGIC
 async function initDashboard() {
     const querySnapshot = await getDocs(collection(db, "literacy_sessions"));
@@ -147,17 +160,8 @@ window.toggleDrawer = (id) => {
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
 };
 
-function setupRealtimeSync(sessionId) {
-    onSnapshot(doc(db, "user_progress", sessionId), (doc) => {
-        const data = doc.data();
-        if (!data) return;
-        ['code', 'meaning'].forEach(type => {
-            const dot = document.getElementById(`dot-${type}-${sessionId}`);
-            const note = document.getElementById(`notes-${type}-${sessionId}`);
-            if (dot) dot.className = `status-dot ${data[`${type}_status`]}`;
-            if (note && document.activeElement !== note) note.value = data[`${type}_notes`];
-        });
-    });
-}
 
 initDashboard();
+
+console.log("Attempting to run seed...");
+seedDatabase().then(() => console.log("Seed function finished!"));
