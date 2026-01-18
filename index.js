@@ -1,6 +1,21 @@
-// index.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+import { getFirestore, doc, setDoc, collection, getDocs, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-// 1. Define the variable and paste the data inside the brackets
+// 1. YOUR FIREBASE CONFIG
+const firebaseConfig = {
+    apiKey: "AIzaSyDmVaFLFCeHn6gPGiGuEQ6jlW4KyYS_lkw",
+    authDomain: "literacy-knowledge.firebaseapp.com",
+    projectId: "literacy-knowledge",
+    storageBucket: "literacy-knowledge.firebasestorage.app",
+    messagingSenderId: "1038879632155",
+    appId: "1:1038879632155:web:6961b7ccc7b70f39d981be"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// 2. THE MASTER DATA VARIABLE
 const sessionsData = [
   /* WEEK 1-2: THE OBSERVERS (Foundations) */
   { "id": "s1", "session_num": 1, "code_craft": { "focus": "Short /a/ & Clockface", "handwriting": "Model 'a', 'c', 'o' (2 o'clock start).", "targets": ["cat", "zap", "napkin"], "retrieval": ["map", "fan"], "dictation": "The cat had a napkin." }, "meaning_engine": { "word": "Notice", "family": "Observers", "boundary": "Seeing a tiny crack (This) vs staring at a wall (Not That).", "stems": ["because", "but", "so"] } },
@@ -48,43 +63,25 @@ const sessionsData = [
   { "id": "s35", "session_num": 35, "code_craft": { "focus": "Term 1 Mastery", "handwriting": "Final LPM Check", "targets": ["Final List"], "retrieval": ["All Term 1"], "dictation": "Final Term 1 Mastery Assessment" }, "meaning_engine": { "word": "Present", "family": "Scholars", "boundary": "Showing work to the class (This) vs hiding it in a desk (Not That).", "stems": ["because", "but", "so"] } }
 ];
 
+// 3. SEEDING FUNCTION (Run this once, then comment out)
 async function seedDatabase() {
     console.log("Starting seed...");
-    try {
-        for (const s of sessionsData) {
-            // Set the static session content
-            await setDoc(doc(db, "literacy_sessions", s.id), s);
-            
-            // Set the initial user progress (status dots and notes)
-            await setDoc(doc(db, "user_progress", s.id), {
-                code_status: "grey",
-                meaning_status: "grey",
-                code_notes: "",
-                meaning_notes: ""
-            });
-            console.log(`Seeded session ${s.session_num}`);
-        }
-        alert("Database successfully seeded!");
-    } catch (error) {
-        console.error("Error seeding database: ", error);
+    for (const s of sessionsData) {
+        await setDoc(doc(db, "literacy_sessions", s.id), s);
+        await setDoc(doc(db, "user_progress", s.id), {
+            code_status: "grey",
+            meaning_status: "grey",
+            code_notes: "",
+            meaning_notes: ""
+        });
     }
+    alert("Database Seeded!");
 }
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+// UNCOMMENT THE LINE BELOW TO SEED, THEN RE-COMMENT IT AFTER
+seedDatabase();
 
-const firebaseConfig = {
-    apiKey: "AIzaSyDmVaFLFCeHn6gPGiGuEQ6jlW4KyYS_lkw",
-    authDomain: "literacy-knowledge.firebaseapp.com",
-    projectId: "literacy-knowledge",
-    storageBucket: "literacy-knowledge.firebasestorage.app",
-    messagingSenderId: "1038879632155",
-    appId: "1:1038879632155:web:6961b7ccc7b70f39d981be"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
+// 4. DASHBOARD LOGIC
 async function initDashboard() {
     const querySnapshot = await getDocs(collection(db, "literacy_sessions"));
     const sessions = querySnapshot.docs.map(doc => doc.data()).sort((a,b) => a.session_num - b.session_num);
@@ -104,7 +101,7 @@ function renderTile(data, type) {
     card.className = 'session-card';
     card.innerHTML = `
         <div class="card-top" onclick="toggleDrawer('${type}-${data.id}')">
-            <div class="status-dot ${type}-dot" id="dot-${type}-${data.id}" onclick="cycleStatus(event, '${data.id}', '${type}')"></div>
+            <div class="status-dot" id="dot-${type}-${data.id}" onclick="cycleStatus(event, '${data.id}', '${type}')"></div>
             <span class="session-label">S${data.session_num}: ${type === 'code' ? data.code_craft.focus : data.meaning_engine.word}</span>
         </div>
         <div class="drawer" id="drawer-${type}-${data.id}" style="display:none;">
@@ -119,29 +116,28 @@ function renderTile(data, type) {
     return card;
 }
 
-// Logic for Content Rendering
 function renderCodeContent(c) {
-    return `
-        <p><strong>Handwriting:</strong> ${c.handwriting}</p>
-        <p><strong>Targets:</strong> ${c.targets.join(', ')}</p>
-        <p><strong>Retrieval:</strong> ${c.retrieval.join(', ')}</p>
-        <p class="dictation">"${c.dictation}"</p>
-    `;
+    return `<p><strong>Handwriting:</strong> ${c.handwriting}</p><p><strong>Targets:</strong> ${c.targets.join(', ')}</p><p><strong>Retrieval:</strong> ${c.retrieval.join(', ')}</p><p class="dictation">"${c.dictation}"</p>`;
 }
 
 function renderMeaningContent(m) {
-    return `
-        <p><strong>Family:</strong> ${m.family}</p>
-        <p><strong>Example:</strong> ${m.boundary_eg}</p>
-        <p><strong>Non-Example:</strong> ${m.boundary_non}</p>
-        <div class="stems"><em>Expansion: ${m.stems.join(' / ')}</em></div>
-    `;
+    return `<p><strong>Family:</strong> ${m.family}</p><p><strong>Boundary:</strong> ${m.boundary}</p><div class="stems"><em>Stems: ${m.stems.join(' / ')}</em></div>`;
 }
 
-// Firebase Syncing
+// 5. EVENT HANDLERS & SYNC
+window.cycleStatus = async (event, sessionId, type) => {
+    event.stopPropagation();
+    const dot = document.getElementById(`dot-${type}-${sessionId}`);
+    const statusOrder = ['grey', 'green', 'yellow'];
+    let current = statusOrder.find(s => dot.classList.contains(s)) || 'grey';
+    let next = statusOrder[(statusOrder.indexOf(current) + 1) % 3];
+
+    dot.className = `status-dot ${next}`;
+    await updateDoc(doc(db, "user_progress", sessionId), { [`${type}_status`]: next });
+};
+
 window.updateNote = async (id, type, val) => {
-    const ref = doc(db, "user_progress", id);
-    await updateDoc(ref, { [`${type}_notes`]: val });
+    await updateDoc(doc(db, "user_progress", id), { [`${type}_notes`]: val });
 };
 
 window.toggleDrawer = (id) => {
@@ -149,24 +145,17 @@ window.toggleDrawer = (id) => {
     el.style.display = el.style.display === 'none' ? 'block' : 'none';
 };
 
-window.cycleStatus = async (event, sessionId, type) => {
-    event.stopPropagation(); // Prevents the drawer from opening
-    const dot = document.getElementById(`dot-${type}-${sessionId}`);
-    const currentStatus = dot.classList.contains('green') ? 'green' : 
-                         dot.classList.contains('yellow') ? 'yellow' : 'grey';
-    
-    let nextStatus = 'grey';
-    if (currentStatus === 'grey') nextStatus = 'green';
-    else if (currentStatus === 'green') nextStatus = 'yellow';
-    else if (currentStatus === 'yellow') nextStatus = 'grey';
-
-    // Update UI
-    dot.classList.remove('grey', 'green', 'yellow');
-    dot.classList.add(nextStatus);
-
-    // Update Firestore
-    const ref = doc(db, "user_progress", sessionId);
-    await updateDoc(ref, { [`${type}_status`]: nextStatus });
-};
+function setupRealtimeSync(sessionId) {
+    onSnapshot(doc(db, "user_progress", sessionId), (doc) => {
+        const data = doc.data();
+        if (!data) return;
+        ['code', 'meaning'].forEach(type => {
+            const dot = document.getElementById(`dot-${type}-${sessionId}`);
+            const note = document.getElementById(`notes-${type}-${sessionId}`);
+            if (dot) dot.className = `status-dot ${data[`${type}_status`]}`;
+            if (note && document.activeElement !== note) note.value = data[`${type}_notes`];
+        });
+    });
+}
 
 initDashboard();
