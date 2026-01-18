@@ -37,17 +37,26 @@ function renderTile(data, type) {
     const isBenchmark = data.session_num % 5 === 0;
     const card = document.createElement('div');
     card.className = `session-card ${isBenchmark ? 'benchmark-highlight' : ''}`;
+    
     card.innerHTML = `
         <div class="card-top" onclick="toggleDrawer('${type}-${data.id}')">
-            <div class="status-dot" id="dot-${type}-${data.id}" onclick="cycleStatus(event, '${data.id}', '${type}')"></div>
+            <div class="status-dot ${data[`${type}_status`] || 'grey'}" 
+                 id="dot-${type}-${data.id}" 
+                 onclick="cycleStatus(event, '${data.id}', '${type}')"></div>
             <span class="session-label">S${data.session_num}: ${type === 'code' ? data.code_craft.focus : data.meaning_engine.word}</span>
         </div>
         <div class="drawer" id="drawer-${type}-${data.id}" style="display:none;">
             <div class="drawer-content">
-                ${type === 'code' ? renderCodeContent(data.code_craft) : renderMeaningContent(data.meaning_engine)}
-                <textarea class="notes-field" id="notes-${type}-${data.id}" 
-                    placeholder="Add lesson notes..." 
-                    onchange="updateNote('${data.id}', '${type}', this.value)"></textarea>
+                <div class="script-section">
+                    ${type === 'code' ? renderCodeContent(data.code_craft) : renderMeaningContent(data.meaning_engine)}
+                </div>
+                
+                <div class="notes-wrapper">
+                    <label class="notes-label">Session Observations</label>
+                    <textarea class="notes-field" id="notes-${type}-${data.id}" 
+                        placeholder="Type teacher notes here..." 
+                        onchange="updateNote('${data.id}', '${type}', this.value)"></textarea>
+                </div>
             </div>
         </div>
     `;
