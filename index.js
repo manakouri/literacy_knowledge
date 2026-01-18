@@ -1,9 +1,6 @@
-console.log("INDEX.JS IS LOADED");
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getFirestore, doc, setDoc, collection, getDocs, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+import { getFirestore, doc, collection, getDocs, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-// 1. YOUR FIREBASE CONFIG
 const firebaseConfig = {
     apiKey: "AIzaSyDmVaFLFCeHn6gPGiGuEQ6jlW4KyYS_lkw",
     authDomain: "literacy-knowledge.firebaseapp.com",
@@ -13,30 +10,20 @@ const firebaseConfig = {
     appId: "1:1038879632155:web:6961b7ccc7b70f39d981be"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-function setupRealtimeSync(sessionId) {
-    onSnapshot(doc(db, "user_progress", sessionId), (docSnap) => {
-        const data = docSnap.data();
-        if (!data) return;
-        ['code', 'meaning'].forEach(type => {
-            const dot = document.getElementById(`dot-${type}-${sessionId}`);
-            const note = document.getElementById(`notes-${type}-${sessionId}`);
-            if (dot) dot.className = `status-dot ${data[`${type}_status`]}`;
-            if (note && document.activeElement !== note) note.value = data[`${type}_notes`];
-        });
-    });
-}
-
-// 4. DASHBOARD LOGIC
+// 1. DASHBOARD INITIALIZATION
 async function initDashboard() {
     const querySnapshot = await getDocs(collection(db, "literacy_sessions"));
     const sessions = querySnapshot.docs.map(doc => doc.data()).sort((a,b) => a.session_num - b.session_num);
 
     const codeContainer = document.getElementById('code-container');
     const meaningContainer = document.getElementById('meaning-container');
+
+    // Clear containers in case of a re-run
+    codeContainer.innerHTML = '';
+    meaningContainer.innerHTML = '';
 
     sessions.forEach(session => {
         codeContainer.appendChild(renderTile(session, 'code'));
@@ -45,9 +32,11 @@ async function initDashboard() {
     });
 }
 
+// 2. TILE RENDERING
 function renderTile(data, type) {
+    const isBenchmark = data.session_num % 5 === 0;
     const card = document.createElement('div');
-    card.className = 'session-card';
+    card.className = `session-card ${isBenchmark ? 'benchmark-highlight' : ''}`;
     card.innerHTML = `
         <div class="card-top" onclick="toggleDrawer('${type}-${data.id}')">
             <div class="status-dot" id="dot-${type}-${data.id}" onclick="cycleStatus(event, '${data.id}', '${type}')"></div>
@@ -66,57 +55,62 @@ function renderTile(data, type) {
 }
 
 function renderCodeContent(c) {
-    return `<p><strong>Handwriting:</strong> ${c.handwriting}</p><p><strong>Targets:</strong> ${c.targets.join(', ')}</p><p><strong>Retrieval:</strong> ${c.retrieval.join(', ')}</p><p class="dictation">"${c.dictation}"</p>`;
+    return `
+        <p><strong>Handwriting:</strong> ${c.handwriting}</p>
+        <p><strong>Targets:</strong> ${c.targets.join(', ')}</p>
+        <p><strong>Retrieval:</strong> ${c.retrieval.join(', ')}</p>
+        <p class="dictation">"${c.dictation}"</p>
+    `;
 }
 
 function renderMeaningContent(m) {
     return `
-        <div class="meaning-display">
-            <p class="family-tag">${m.family}</p>
-            <p><strong>Definition:</strong> ${m.definition || 'To look closely.'}</p>
-            <div class="boundary-box">
-                <p>✅ <strong>THIS:</strong> ${m.boundary_eg || m.boundary}</p>
-                <p>❌ <strong>NOT THAT:</strong> ${m.boundary_non || 'N/A'}</p>
-            </div>
-            <div class="stems">
-                <strong>Expansion Stems:</strong>
-                <ul>
-                    <li>... because</li>
-                    <li>... but</li>
-                    <li>... so</li>
-                </ul>
-            </div>
-        </div>
+        <p><strong>Family:</strong> ${m.family}</p>
+        <p><strong>Example:</strong> ${m.boundary || m.boundary_eg}</p>
+        <div class="stems"><em>Stems: ...because / ...but / ...so</em></div>
     `;
 }
 
-// 5. EVENT HANDLERS & SYNC
+// 3. UTILITIES & REALTIME SYNC
+window.toggleDrawer = (id) => {
+    const el = document.getElementById(`drawer-${id}`);
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+};
+
 window.cycleStatus = async (event, sessionId, type) => {
-    event.stopPropagation(); // Prevents the drawer from opening/closing when you click the dot
-    
+    event.stopPropagation();
     const docRef = doc(db, "user_progress", sessionId);
     const dot = document.getElementById(`dot-${type}-${sessionId}`);
     
-    // Logic: Grey -> Green -> Yellow -> (back to Grey)
     let nextStatus = 'grey';
     if (dot.classList.contains('grey')) nextStatus = 'green';
     else if (dot.classList.contains('green')) nextStatus = 'yellow';
     else if (dot.classList.contains('yellow')) nextStatus = 'grey';
 
-    // Update Firebase immediately
     await updateDoc(docRef, { [`${type}_status`]: nextStatus });
-    
-    // The setupRealtimeSync function will handle updating the UI color automatically!
 };
 
 window.updateNote = async (id, type, val) => {
     await updateDoc(doc(db, "user_progress", id), { [`${type}_notes`]: val });
 };
 
-window.toggleDrawer = (id) => {
-    const el = document.getElementById(`drawer-${id}`);
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
-};
+function setupRealtimeSync(sessionId) {
+    onSnapshot(doc(db, "user_progress", sessionId), (docSnap) => {
+        const data = docSnap.data();
+        if (!data) return;
+        ['code', 'meaning'].forEach(type => {
+            const dot = document.getElementById(`dot-${type}-${sessionId}`);
+            const note = document.getElementById(`notes-${type}-${sessionId}`);
+            if (dot) {
+                dot.classList.remove('grey', 'green', 'yellow');
+                dot.classList.add(data[`${type}_status`] || 'grey');
+            }
+            if (note && document.activeElement !== note) {
+                note.value = data[`${type}_notes`] || '';
+            }
+        });
+    });
+}
 
-
+// Start the app
 initDashboard();
