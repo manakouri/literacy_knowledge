@@ -136,7 +136,24 @@ function renderCodeContent(c) {
 }
 
 function renderMeaningContent(m) {
-    return `<p><strong>Family:</strong> ${m.family}</p><p><strong>Boundary:</strong> ${m.boundary}</p><div class="stems"><em>Stems: ${m.stems.join(' / ')}</em></div>`;
+    return `
+        <div class="meaning-display">
+            <p class="family-tag">${m.family}</p>
+            <p><strong>Definition:</strong> ${m.definition || 'To look closely.'}</p>
+            <div class="boundary-box">
+                <p>✅ <strong>THIS:</strong> ${m.boundary_eg || m.boundary}</p>
+                <p>❌ <strong>NOT THAT:</strong> ${m.boundary_non || 'N/A'}</p>
+            </div>
+            <div class="stems">
+                <strong>Expansion Stems:</strong>
+                <ul>
+                    <li>... because</li>
+                    <li>... but</li>
+                    <li>... so</li>
+                </ul>
+            </div>
+        </div>
+    `;
 }
 
 // 5. EVENT HANDLERS & SYNC
