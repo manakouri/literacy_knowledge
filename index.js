@@ -17,24 +17,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// 3. SEEDING FUNCTION (Run this once, then comment out)   Uncomment if reseeding
-// async function seedDatabase() {
-    console.log("Starting seed...");
-    for (const s of sessionsData) {
-        await setDoc(doc(db, "literacy_sessions", s.id), s);
-        await setDoc(doc(db, "user_progress", s.id), {
-            code_status: "grey",
-            meaning_status: "grey",
-            code_notes: "",
-            meaning_notes: ""
-        });
-    }
-    alert("Database Seeded!");
-}
-
-// UNCOMMENT THE LINE BELOW TO SEED, THEN RE-COMMENT IT AFTER  only if needing to reseed the database
-// seedDatabase();
-
 function setupRealtimeSync(sessionId) {
     onSnapshot(doc(db, "user_progress", sessionId), (docSnap) => {
         const data = docSnap.data();
